@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import shiftRoutes from './routes/shiftRoutes';
 import careHomeRoutes from './routes/careHomeRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
+import externalApiRoutes from './routes/externalApiRoutes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import prisma from './utils/prisma';
 
@@ -14,9 +15,15 @@ const PORT = process.env.PORT || 5002;
 
 app.use(
   cors({
-    origin: '*',
+    origin: [
+      'http://localhost:3000',  // Keris frontend
+      'http://localhost:3001',  // Care Home frontend
+      'http://localhost:5001',  // Keris backend
+      'http://localhost:5002',  // Care Home backend (self)
+    ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Service-Name'],
+    credentials: true,
   })
 );
 
@@ -54,6 +61,8 @@ app.get('/', (req: Request, res: Response) => {
 app.use('/api/shifts', shiftRoutes);
 app.use('/api/care-homes', careHomeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+// External API routes (protected by API key)
+app.use('/api/external', externalApiRoutes);
 
 // Error Handling
 app.use(notFoundHandler);

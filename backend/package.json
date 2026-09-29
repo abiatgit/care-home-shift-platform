@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "test:integration": "tsx tests/integration.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
