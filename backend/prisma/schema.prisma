@@ -1,0 +1,108 @@
+// ==============================================================================
+// PRISMA SCHEMA: UK CARE HOME SHIFT & VACANCY MANAGEMENT PLATFORM
+// ==============================================================================
+// Models:
+// 1. CareHome: Fictional care facilities posting vacancies
+// 2. Shift: Shift/vacancy records with required skills, status, priority, and staff counts
+// 3. Staff: Synthetic workforce demo records (to be replaced with Staff Bank API)
+// 4. ShiftAssignment: Links selected staff to shifts and controls filledStaff counts
+// ==============================================================================
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ------------------------------------------------------------------------------
+// CareHome Model
+// ------------------------------------------------------------------------------
+model CareHome {
+  id           Int      @id @default(autoincrement())
+  name         String
+  address      String
+  town         String
+  postcode     String
+  county       String
+  numberOfBeds Int
+  managerName  String
+  managerEmail String
+  phone        String
+  careType     String   // e.g., "Residential Elderly", "Dementia Nursing", "Learning Disability"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  shifts       Shift[]
+
+  @@map("care_homes")
+}
+
+// ------------------------------------------------------------------------------
+// Shift / Vacancy Model
+// ------------------------------------------------------------------------------
+model Shift {
+  id                 Int               @id @default(autoincrement())
+  careHomeId         Int
+  careHome           CareHome          @relation(fields: [careHomeId], references: [id], onDelete: Cascade)
+  jobTitle           String            // e.g., "Care Assistant", "Registered Nurse"
+  shiftDate          String            // YYYY-MM-DD format (e.g., "2026-10-15")
+  startTime          String            // e.g., "07:00", "20:00"
+  endTime            String            // e.g., "19:00", "08:00"
+  requiredStaff      Int               // Total workers needed for this shift
+  filledStaff        Int               @default(0) // Count of confirmed staff
+  location           String            // Town/City
+  department         String            // e.g., "Memory Wing", "Acute Care"
+  careType           String            // e.g., "Elderly Residential", "Nursing"
+  requiredSkills     String            // Comma-separated (e.g., "Dementia Care, Medication Support")
+  experienceRequired String            // "No experience", "1+ years", "2+ years", "3+ years", "5+ years", "10+ years"
+  payRate            String            // e.g., "£14.50/hr", "£26.00/hr"
+  notes              String?
+  status             String            @default("OPEN") // OPEN, PARTIALLY_FILLED, FILLED, CANCELLED, EXPIRED
+  priority           String            @default("NORMAL") // NORMAL, HIGH, URGENT
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  assignments        ShiftAssignment[]
+
+  @@map("shifts")
+}
+
+// ------------------------------------------------------------------------------
+// Synthetic Staff Model (Placeholder for future NHS & Care Workforce API)
+// ------------------------------------------------------------------------------
+model Staff {
+  id           Int               @id @default(autoincrement())
+  name         String
+  role         String            // e.g., "Care Assistant", "Registered Nurse"
+  experience   String            // e.g., "5 years"
+  skills       String            // Comma-separated skills
+  email        String            @unique
+  phone        String
+  location     String
+  availability String            @default("Immediate")
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  assignments  ShiftAssignment[]
+
+  @@map("staff")
+}
+
+// ------------------------------------------------------------------------------
+// Shift Assignment Model (Care Home -> Shift -> Staff Selection Workflow)
+// ------------------------------------------------------------------------------
+model ShiftAssignment {
+  id         Int      @id @default(autoincrement())
+  shiftId    Int
+  shift      Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  staffId    Int
+  staff      Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+  status     String   @default("CONFIRMED") // CONFIRMED, PROPOSED, DECLINED
+
+  @@unique([shiftId, staffId])
+  @@map("shift_assignments")
+}
